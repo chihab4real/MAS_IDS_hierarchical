@@ -13,6 +13,8 @@ public class ManagerAgent extends Agent  {
     public static ArrayList<PacketSolved> packetSolveds=new ArrayList<>();
     public static int classREady=0;
 
+    public static int numberOfContainers =100;
+    public static int treating_time =1000;
     public static boolean end=false;
 
 
@@ -47,6 +49,7 @@ public class ManagerAgent extends Agent  {
                         try {
 
                             PlatformPara.messages.add(new Message(msg.getSender().getLocalName(),"SubManagerAgent_Container"+(i+1),msg.getContent()));
+
                         } catch (Exception e) {
 
                             e.printStackTrace();
@@ -69,6 +72,7 @@ public class ManagerAgent extends Agent  {
                     try {
 
                         PlatformPara.messages.add(new Message(msg.getSender().getLocalName(),"ClassifAgent",msg.getContent()));
+                        Thread.sleep(ManagerAgent.treating_time);
                     } catch (Exception e) {
 
                         e.printStackTrace();
@@ -98,6 +102,7 @@ public class ManagerAgent extends Agent  {
                         send(msg);
                         try {
                             PlatformPara.messages.add((new Message(msg.getSender().getLocalName(),"ClassifAgent",msg.getContent())));
+                            Thread.sleep(ManagerAgent.treating_time);
 
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -113,9 +118,15 @@ public class ManagerAgent extends Agent  {
                             try {
                                 PlatformPara.messages.add((new Message(message1.getSender().getLocalName(),"SubManagerAgent_Container"+(i+1),message1.getContent())));
 
+
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
+                        }
+                        try {
+                            Thread.sleep(ManagerAgent.treating_time);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
                         }
 
                     }
@@ -146,6 +157,11 @@ public class ManagerAgent extends Agent  {
                         //receiving message: that a container reached 50 anomaly packets
                         String cid = message.getContent().replace("Check50_A","");
                         updateNetworkState(Integer.parseInt(cid));
+                        try {
+                            Thread.sleep(ManagerAgent.treating_time);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                         int state = CheckNetworkState();
 
 
@@ -159,13 +175,24 @@ public class ManagerAgent extends Agent  {
 
                         PlatformPara.messages.add(new Message(msg.getSender().getLocalName(), "SubManagerAgent_Container"+cid, msg.getContent()));
                         block(10);
+                        try {
+                            Thread.sleep(ManagerAgent.treating_time);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+
 
                     }
 
                     if(message.getContent().contains("B:Check_OK")){
-                        String s = message.getSender().toString();
+                        String s = message.getSender().getLocalName().toString();
                         //SubManagerAgent_Container
                         ManagerAgent.containers.get(Integer.parseInt(s.replace("SubManagerAgent_Container",""))-1).setSubmanagerworking(true);
+                        try {
+                            Thread.sleep(ManagerAgent.treating_time);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                     }
 
 
@@ -197,6 +224,8 @@ public class ManagerAgent extends Agent  {
             }
 
         }
+
+
     }
 
     public int CheckNetworkState(){

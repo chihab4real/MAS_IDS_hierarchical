@@ -51,6 +51,7 @@ public class ClassifAgent extends Agent {
                 send(msg);
                 try {
                     PlatformPara.messages.add(new Message(msg.getSender().getLocalName(),"ManagerAgent",msg.getContent()));
+                    Thread.sleep(50);
                     //PlatformPara.NotifyMessages(new Message(msg.getSender().getLocalName(),"AnalysorAgent_Container"+(i+1),msg.getContent()),0);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -79,6 +80,7 @@ public class ClassifAgent extends Agent {
                                 send(msg);
                                 try {
                                     PlatformPara.messages.add(new Message(msg.getSender().getLocalName(),"ManagerAgent",msg.getContent()));
+                                    Thread.sleep(50);
                                     //PlatformPara.NotifyMessages(new Message(msg.getSender().getLocalName(),"AnalysorAgent_Container"+(i+1),msg.getContent()),0);
                                 } catch (Exception e) {
                                     e.printStackTrace();
@@ -102,6 +104,7 @@ public class ClassifAgent extends Agent {
                         try {
                             PlatformPara.messages.add(new Message(msg.getSender().getLocalName(),
                                     "ManagerAgent",msg.getContent()));
+                            Thread.sleep(50);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -133,6 +136,7 @@ public class ClassifAgent extends Agent {
                             try {
                                 PlatformPara.messages.add(new Message(msg.getSender().getLocalName(),
                                         "ManagerAgent",msg.getContent()));
+                                Thread.sleep(50);
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
@@ -290,14 +294,13 @@ public class ClassifAgent extends Agent {
 
             try {
                 PlatformPara.messages.add(new Message(msg.getSender().getLocalName(),"ManagerAgent",msg.getContent()));
+                Thread.sleep(50);
                 //PlatformPara.NotifyMessages(new Message(msg.getSender().getLocalName(),"ManagerAgent",msg.getContent()),0);
             } catch (Exception e) {
                 e.printStackTrace();
             }
 
-            /*Message messageListe;
-            messageListe = new Message(msg.getSender().getLocalName(), "ManagerAgent", msg.getContent());
-            ManagerAgent.addMessage(messageListe);*/
+
 
         }
 

@@ -38,7 +38,7 @@ public class CreateContainers extends SimpleBehaviour {
 
         n++;
 
-        if(n==3){
+        if(n==ManagerAgent.numberOfContainers+1){
             ManagerAgent.classREady=1;
             condition=true;
         }

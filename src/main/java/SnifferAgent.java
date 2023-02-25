@@ -21,10 +21,10 @@ public class SnifferAgent extends Agent {
 
 
 
-
         Instances TestData = null;
         try {
-           TestData = new DataSource("KDDTest.arff").getDataSet();
+            TestData = new DataSource("KDDTest.arff").getDataSet();
+            TestData.setClassIndex(TestData.numAttributes()-1);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -32,6 +32,7 @@ public class SnifferAgent extends Agent {
 
 
         String containerID = getMyID(getAID().getLocalName());
+
 
         /*
 
@@ -46,20 +47,8 @@ public class SnifferAgent extends Agent {
         messageListe = new Message(msg.getSender().getLocalName(),"SubManagerAgent_Container"+containerID,msg.getContent());
         ManagerAgent.addMessage(messageListe);*/
 
-        addBehaviour(new OneShotBehaviour() {
-            @Override
-            public void action() {
-                try {
-                    AgentController agentController = null;
-                    agentController = getContainerController().createNewAgent("AnalysorAgent_Container"+containerID,"AnalysorAgent",null);
+        addBehaviour(new BehSniff(this,Integer.parseInt((containerID))-1,TestData));
 
-
-                    agentController.start();
-                } catch (StaleProxyException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
 
         addBehaviour(new CyclicBehaviour() {
             @Override
@@ -75,8 +64,9 @@ public class SnifferAgent extends Agent {
                         msg.addReceiver(dest);
                         send(msg);
                         try {
-                            ManagerAgent.addMessage(new Message(msg.getSender().getLocalName(),
+                            PlatformPara.messages.add(new Message(msg.getSender().getLocalName(),
                                     "AnalysorAgent_Container"+String.valueOf(containerID),msg.getContent()));
+                            Thread.sleep(ManagerAgent.treating_time);
                             //PlatformPara.NotifyMessages(new Message(msg.getSender().getLocalName(),"SubManagerAgent_Container"+String.valueOf(containerID),msg.getContent()),0);
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -99,9 +89,6 @@ public class SnifferAgent extends Agent {
 
 
 
-
-
-        addBehaviour(new BehSniff(this,Integer.parseInt(containerID)-1));
 
         /*addBehaviour(new TickerBehaviour(this, 5000) {
             @Override

@@ -2,7 +2,10 @@ import com.mongodb.*;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
+import jade.core.behaviours.OneShotBehaviour;
 import jade.lang.acl.ACLMessage;
+import jade.wrapper.AgentController;
+import jade.wrapper.StaleProxyException;
 import weka.core.Instance;
 
 import java.util.ArrayList;
@@ -14,9 +17,11 @@ public class AnalysorAgent extends Agent {
     //public boolean informed = false;
     Clsi DT,SVM,NN;
 
+    int packets_counter = 0;
 
     @Override
     protected void setup() {
+
 
 
 
@@ -32,18 +37,23 @@ public class AnalysorAgent extends Agent {
 
         String containerID = getMyID(getAID().getLocalName());
 
-        /*
 
-        ACLMessage msg = new ACLMessage( ACLMessage.INFORM );
-        msg.setContent("AAC"+containerID+"Ready");
-        AID dest = null;
-        dest = new AID("SnifferAgent_Container"+containerID,AID.ISLOCALNAME);
-        msg.addReceiver(dest);
-        send(msg);
 
-        Message messageListe;
-        messageListe = new Message(msg.getSender().getLocalName(),"SnifferAgent_Container"+containerID,msg.getContent());
-        PlatformPara.messages.add(messageListe);*/
+
+        addBehaviour(new OneShotBehaviour() {
+            @Override
+            public void action() {
+                try {
+                    AgentController agentController = null;
+                    agentController = getContainerController().createNewAgent("SnifferAgent_Container"+containerID,"SnifferAgent",null);
+
+
+                    agentController.start();
+                } catch (StaleProxyException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
 
         addBehaviour(new CyclicBehaviour() {
             @Override
@@ -51,9 +61,9 @@ public class AnalysorAgent extends Agent {
 
 
 
+
                 ACLMessage recieve = receive();
                 if(recieve!=null){
-
 
                     if(recieve.getContent().equals("Check")){
                         ACLMessage message_from_analysor_to_sniffer = new ACLMessage(ACLMessage.INFORM);
@@ -78,6 +88,7 @@ public class AnalysorAgent extends Agent {
 
                             PlatformPara.messages.add(new Message(message_from_analysor_to_submanager.getSender().getLocalName(),
                                     "SubManagerAgent_Container"+String.valueOf(containerID),message_from_analysor_to_submanager.getContent()));
+                            Thread.sleep(ManagerAgent.treating_time);
 
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -86,7 +97,7 @@ public class AnalysorAgent extends Agent {
 
                     if(recieve.getContent().contains("S:Check_OK")){
 
-                        ManagerAgent.containers.get(Integer.parseInt(containerID)).setSniffer_working(true);
+                        ManagerAgent.containers.get(Integer.parseInt(containerID)-1).setSniffer_working(true);
 
                         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
                         msg.setContent("S:Check_OK");
@@ -99,6 +110,7 @@ public class AnalysorAgent extends Agent {
                         try {
                             PlatformPara.messages.add(new Message(msg.getSender().getLocalName(),
                                     "SubManagerAgent_Container"+String.valueOf(containerID),msg.getContent()));
+                            Thread.sleep(ManagerAgent.treating_time);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -106,7 +118,7 @@ public class AnalysorAgent extends Agent {
 
                     if(recieve.getContent().equals("pause for update")){
 
-                        ManagerAgent.containers.get(Integer.parseInt(containerID)).setAnalysorworking(false);
+                        ManagerAgent.containers.get(Integer.parseInt(containerID)-1).setAnalysorworking(false);
 
                         ACLMessage message1 = new ACLMessage(ACLMessage.INFORM);
                         message1.setContent("pause for update");
@@ -116,6 +128,7 @@ public class AnalysorAgent extends Agent {
 
                         try {
                             PlatformPara.messages.add((new Message(message1.getSender().getLocalName(),"SnifferAgent_Container"+containerID,message1.getContent())));
+                            Thread.sleep(ManagerAgent.treating_time);
 
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -124,7 +137,7 @@ public class AnalysorAgent extends Agent {
 
                     if(recieve.getContent().equals("update done")){
 
-                        ManagerAgent.containers.get(Integer.parseInt(containerID)).setAnalysorworking(true);
+                        ManagerAgent.containers.get(Integer.parseInt(containerID)-1).setAnalysorworking(true);
 
                         DT = ClassifAgent.DT;
                         SVM= ClassifAgent.SVM;
@@ -138,6 +151,7 @@ public class AnalysorAgent extends Agent {
 
                         try {
                             PlatformPara.messages.add((new Message(message1.getSender().getLocalName(),"SnifferAgent_Container"+containerID,message1.getContent())));
+                            Thread.sleep(ManagerAgent.treating_time);
 
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -148,7 +162,7 @@ public class AnalysorAgent extends Agent {
 
 
 
-                if(ManagerAgent.containers.get(Integer.parseInt(containerID)-1).getPacketClassified().size()>=50 && !ManagerAgent.containers.get(Integer.parseInt(containerID)-1).isInformed()) {
+                if(ManagerAgent.containers.get(Integer.parseInt(containerID)-1).getPacketClassified().size()%50==0 && !ManagerAgent.containers.get(Integer.parseInt(containerID)-1).isInformed()) {
                     if(!ManagerAgent.containers.get(Integer.parseInt(containerID)-1).isContainerInformed()){
                         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
                         msg.setContent("Check50_A" + containerID);
@@ -158,19 +172,18 @@ public class AnalysorAgent extends Agent {
                         send(msg);
                         try {
                             PlatformPara.messages.add(new Message(msg.getSender().getLocalName(),"SubManagerAgent_Container"+containerID,msg.getContent()));
-                            //PlatformPara.NotifyMessages(new Message(msg.getSender().getLocalName(),"ManagerAgent",msg.getContent()),0);
+                            Thread.sleep(ManagerAgent.treating_time);
+
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
 
 
-
-
-
-                        /*Message messageListe;
-                        messageListe = new Message(msg.getSender().getLocalName(), "ManagerAgent", msg.getContent());
-                        PlatformPara.messages.add(messageListe);*/
-
+                        try {
+                            Thread.sleep(ManagerAgent.treating_time);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                         ManagerAgent.containers.get(Integer.parseInt(containerID)-1).setContainerInformed(true);
 
                     }
@@ -189,8 +202,11 @@ public class AnalysorAgent extends Agent {
                             send(msg);
 
                             PlatformPara.messages.add(new Message(msg.getSender().getLocalName(),"SubManagerAgent_Container"+containerID,msg.getContent()));
-
-
+                            try {
+                                Thread.sleep(ManagerAgent.treating_time);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
 
 
                             block();
@@ -222,12 +238,21 @@ public class AnalysorAgent extends Agent {
                         try {
                             Solve(attacks,packetSniffer,DT,SVM,NN);
 
+                            packets_counter+=1;
+
 
                             ManagerAgent.containers.get(Integer.parseInt(containerID)-1).getPacketsDetected().remove(packetSniffer);
 
 
 
                         } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+
+
+                        try {
+                            Thread.sleep(ManagerAgent.treating_time);
+                        } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
                     }
@@ -292,7 +317,7 @@ public class AnalysorAgent extends Agent {
 
         packetDetected.setBywho(getByWho(attacks.get((int)finall).getName(),attackj48,attacksvm,attacknn));
         ManagerAgent.containers.get(Integer.parseInt(containerID)-1).getPacketClassified().add(packetDetected);
-        sendPackettoDB(packetDetected,printed);
+        //sendPackettoDB(packetDetected,printed);
 
 
 
@@ -362,7 +387,7 @@ public class AnalysorAgent extends Agent {
         return x;
     }
 
-    public static void sendPackettoDB(PacketDetected packetDetected, String printed)throws Exception{
+    /*public static void sendPackettoDB(PacketDetected packetDetected, String printed)throws Exception{
         MongoClient mongoClient = new MongoClient(new MongoClientURI("mongodb://localhost:27017"));
         DB database = mongoClient.getDB("Test_Hierarchical");
 
@@ -379,7 +404,7 @@ public class AnalysorAgent extends Agent {
                         .append("city", "Faketon")
                         .append("state", "MA")
                         .append("zip", 12345))
-                .append("books", books);*/
+                .append("books", books);
 
         collection.insert(dbObject);
 
@@ -389,7 +414,7 @@ public class AnalysorAgent extends Agent {
         System.out.println(printed+"\n------------------------------------------------");
 
 
-    }
+    }*/
 
 
 }

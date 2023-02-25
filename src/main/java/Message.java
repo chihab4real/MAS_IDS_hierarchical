@@ -1,6 +1,9 @@
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
 import jade.lang.acl.ACLMessage;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class Message {
     private String Sender;
@@ -60,5 +63,17 @@ public class Message {
 
     public void setTime(LocalDateTime time) {
         Time = time;
+    }
+
+
+    public DBObject toDBObject(){
+        DBObject dbObject = new BasicDBObject().append("sender",this.Sender)
+                .append("reciever",this.Reciever)
+                .append("content",this.Content)
+                .append("time", DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss").format(this.Time))
+                ;
+
+
+        return dbObject;
     }
 }

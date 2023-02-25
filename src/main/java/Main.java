@@ -1,3 +1,4 @@
+import com.mongodb.*;
 import jade.core.Profile;
 import jade.wrapper.AgentController;
 import jade.wrapper.ControllerException;
@@ -16,11 +17,12 @@ import java.util.TimerTask;
 public class Main {
 
     static int index1=0;
+    static String code = "_"+ManagerAgent.treating_time +"_"+ManagerAgent.numberOfContainers;
 
     public static void main(String[] args) {
 
 
-        int time_ex=240;
+        int time_ex=300;
 
         Timer timer = new Timer();
 
@@ -38,10 +40,12 @@ public class Main {
                     }
 
 
-                    //System.out.println(ManagerAgent.allPackets.size());
+                    System.out.println("END");
+
                     try {
-                        //sendPackettoDB(ManagerAgent.packetsClassified);
-                        System.exit(0);
+                        sendPackettoDB();
+                        sendMessagestoDB();
+
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -222,4 +226,48 @@ public class Main {
         }
 
     }
+
+    public static void sendPackettoDB()throws Exception{
+        MongoClient mongoClient = new MongoClient(new MongoClientURI("mongodb://localhost:27017"));
+        DB database = mongoClient.getDB("PacketsHierar");
+
+        DBCollection collection = database.getCollection("PacketsDetected"+code);
+
+        int number=0;
+        int number2=0;
+
+
+        for(Container container:ManagerAgent.containers){
+            number+=container.getAll().size();
+            number2+=container.getPacketClassified().size();
+
+            for(PacketDetected p: container.getPacketClassified()){
+                DBObject dbObject = p.toDBObject();
+                collection.insert(dbObject);
+            }
+        }
+
+        System.out.println(number+"\n"+number2);
+
+
+    }
+
+    public static void sendMessagestoDB()throws Exception{
+        MongoClient mongoClient = new MongoClient(new MongoClientURI("mongodb://localhost:27017"));
+        DB database = mongoClient.getDB("PacketsHierar");
+
+        DBCollection collection = database.getCollection("Messages"+code);
+
+        System.out.println(PlatformPara.messages.size()+"\n");
+
+
+        for(Message message:PlatformPara.messages){
+
+            DBObject dbObject = message.toDBObject();
+            collection.insert(dbObject);
+        }
+
+
+    }
+
 }
