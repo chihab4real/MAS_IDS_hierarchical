@@ -7,6 +7,8 @@ import jade.wrapper.AgentController;
 import jade.wrapper.StaleProxyException;
 
 public class SubManagerAgent extends Agent {
+
+    boolean wait = false;
     @Override
     protected void setup() {
         String containerID = getMyID(getAID().getLocalName());
@@ -38,6 +40,15 @@ public class SubManagerAgent extends Agent {
                     ACLMessage message = receive();
                     if (message != null) {
                         if (message.getContent().equals("Check")) {
+                            wait = true;
+
+                            try {
+                                Thread.sleep(ManagerAgent.treating_time);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+
+
 
                             ManagerAgent.containers.get(Integer.parseInt(containerID) - 1).setInformed(true);
 
@@ -122,8 +133,7 @@ public class SubManagerAgent extends Agent {
 
                                             if (rcv.getSender().getLocalName().equals("SnifferAgent_Container" + containerID)) {
 
-                                                /*System.out.println("----------------------------------------\nSnifferAgent_Container" + containerID + "\t is ALIVE\n" +
-                                                        "-------------------------------------------------");*/
+
                                             }
 
                                         }
@@ -138,8 +148,17 @@ public class SubManagerAgent extends Agent {
                         if (message.getContent().contains("S:Check_OK")) {
 
 
+                            try {
+                                Thread.sleep(ManagerAgent.treating_time);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            wait=false;
+
+
                             ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
                             msg.setContent("S:Check_OK");
+                            wait = false;
                             AID dest = null;
                             dest = new AID("ManagerAgent", AID.ISLOCALNAME);
                             msg.addReceiver(dest);
@@ -158,6 +177,13 @@ public class SubManagerAgent extends Agent {
 
 
                         if (message.getContent().contains("A:Check_OK")) {
+
+                            try {
+                                Thread.sleep(ManagerAgent.treating_time);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            wait=false;
 
 
                             ManagerAgent.containers.get(Integer.parseInt(containerID)).setAnalysorworking(true);

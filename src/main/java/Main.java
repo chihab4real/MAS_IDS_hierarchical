@@ -261,7 +261,7 @@ public class Main {
         System.out.println(PlatformPara.messages.size()+"\n");
 
 
-        for(Message message:PlatformPara.messages){
+       for(Message message:PlatformPara.messages){
 
             DBObject dbObject = message.toDBObject();
             collection.insert(dbObject);

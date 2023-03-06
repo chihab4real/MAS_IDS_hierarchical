@@ -16,8 +16,8 @@ public class AnalysorAgent extends Agent {
 
     //public boolean informed = false;
     Clsi DT,SVM,NN;
+    boolean waiting_for_answer=false;
 
-    int packets_counter = 0;
 
     @Override
     protected void setup() {
@@ -36,6 +36,8 @@ public class AnalysorAgent extends Agent {
         NN = ClassifAgent.NN;
 
         String containerID = getMyID(getAID().getLocalName());
+
+
 
 
 
@@ -66,6 +68,9 @@ public class AnalysorAgent extends Agent {
                 if(recieve!=null){
 
                     if(recieve.getContent().equals("Check")){
+
+                        waiting_for_answer=true;
+
                         ACLMessage message_from_analysor_to_sniffer = new ACLMessage(ACLMessage.INFORM);
                         message_from_analysor_to_sniffer.setContent("Check");
                         AID dest = null;
@@ -88,7 +93,8 @@ public class AnalysorAgent extends Agent {
 
                             PlatformPara.messages.add(new Message(message_from_analysor_to_submanager.getSender().getLocalName(),
                                     "SubManagerAgent_Container"+String.valueOf(containerID),message_from_analysor_to_submanager.getContent()));
-                            Thread.sleep(ManagerAgent.treating_time);
+                            block(ManagerAgent.treating_time);
+                            
 
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -96,6 +102,7 @@ public class AnalysorAgent extends Agent {
                     }
 
                     if(recieve.getContent().contains("S:Check_OK")){
+                        waiting_for_answer=false;
 
                         ManagerAgent.containers.get(Integer.parseInt(containerID)-1).setSniffer_working(true);
 
@@ -110,7 +117,7 @@ public class AnalysorAgent extends Agent {
                         try {
                             PlatformPara.messages.add(new Message(msg.getSender().getLocalName(),
                                     "SubManagerAgent_Container"+String.valueOf(containerID),msg.getContent()));
-                            Thread.sleep(ManagerAgent.treating_time);
+                            block(ManagerAgent.treating_time);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -128,7 +135,7 @@ public class AnalysorAgent extends Agent {
 
                         try {
                             PlatformPara.messages.add((new Message(message1.getSender().getLocalName(),"SnifferAgent_Container"+containerID,message1.getContent())));
-                            Thread.sleep(ManagerAgent.treating_time);
+                            block(ManagerAgent.treating_time);
 
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -151,114 +158,115 @@ public class AnalysorAgent extends Agent {
 
                         try {
                             PlatformPara.messages.add((new Message(message1.getSender().getLocalName(),"SnifferAgent_Container"+containerID,message1.getContent())));
-                            Thread.sleep(ManagerAgent.treating_time);
+                            block(ManagerAgent.treating_time);
 
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
                     }
 
-                }
+                    if(recieve.getContent().equals("net state")){
 
-
-
-                if(ManagerAgent.containers.get(Integer.parseInt(containerID)-1).getPacketClassified().size()%50==0 && !ManagerAgent.containers.get(Integer.parseInt(containerID)-1).isInformed()) {
-                    if(!ManagerAgent.containers.get(Integer.parseInt(containerID)-1).isContainerInformed()){
+                        waiting_for_answer=false;
+                        ManagerAgent.containers.get(Integer.parseInt(containerID)-1).setCuurentstate(ManagerAgent.containers.get(Integer.parseInt(containerID)-1).getPacketClassified().size());
                         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-                        msg.setContent("Check50_A" + containerID);
+                        msg.setContent("netstate_updated");
                         AID dest = null;
                         dest = new AID("SubManagerAgent_Container"+containerID, AID.ISLOCALNAME);
                         msg.addReceiver(dest);
                         send(msg);
-                        try {
-                            PlatformPara.messages.add(new Message(msg.getSender().getLocalName(),"SubManagerAgent_Container"+containerID,msg.getContent()));
-                            Thread.sleep(ManagerAgent.treating_time);
 
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                        PlatformPara.messages.add(new Message(msg.getSender().getLocalName(),"SubManagerAgent_Container"+containerID,msg.getContent()));
+                        block(ManagerAgent.treating_time);
+
+
+                        block();
+                    }
+
+                    if(recieve.getContent().contains("ADT_")){
+                        waiting_for_answer=false;
+                        ManagerAgent.containers.get(Integer.parseInt(containerID)-1).setInformed(true);
+                        int state = Integer.parseInt(recieve.getContent().replace("ADT_",""));
+
+                        if(state==ManagerAgent.containers.size()){
+                            //UNDER ATTACK
                         }
+                        //System.out.println("Anomalie/attack sur "+messageRcv.getContent().replace("ADT_","")+"machines");
 
-
-                        try {
-                            Thread.sleep(ManagerAgent.treating_time);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                        ManagerAgent.containers.get(Integer.parseInt(containerID)-1).setContainerInformed(true);
 
                     }
 
-                    ACLMessage messageRcv = receive();
-                    if (messageRcv!=null){
+                }else{
 
-
-                        if(messageRcv.getContent().equals("net state")){
-                            ManagerAgent.containers.get(Integer.parseInt(containerID)-1).setCuurentstate(ManagerAgent.containers.get(Integer.parseInt(containerID)-1).getPacketClassified().size());
+                    if(ManagerAgent.containers.get(Integer.parseInt(containerID)-1).getPacketClassified().size()%50==0 && !ManagerAgent.containers.get(Integer.parseInt(containerID)-1).isInformed()) {
+                        if(!ManagerAgent.containers.get(Integer.parseInt(containerID)-1).isContainerInformed()){
                             ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-                            msg.setContent("netstate_updated");
+                            msg.setContent("Check50_A" + containerID);
                             AID dest = null;
                             dest = new AID("SubManagerAgent_Container"+containerID, AID.ISLOCALNAME);
                             msg.addReceiver(dest);
                             send(msg);
-
-                            PlatformPara.messages.add(new Message(msg.getSender().getLocalName(),"SubManagerAgent_Container"+containerID,msg.getContent()));
+                            waiting_for_answer=true;
                             try {
-                                Thread.sleep(ManagerAgent.treating_time);
-                            } catch (InterruptedException e) {
+                                PlatformPara.messages.add(new Message(msg.getSender().getLocalName(),"SubManagerAgent_Container"+containerID,msg.getContent()));
+
+
+                            } catch (Exception e) {
                                 e.printStackTrace();
                             }
 
 
-                            block();
+                            ManagerAgent.containers.get(Integer.parseInt(containerID)-1).setContainerInformed(true);
+
                         }
 
-                        if(messageRcv.getContent().contains("ADT_")){
-                            ManagerAgent.containers.get(Integer.parseInt(containerID)-1).setInformed(true);
-                            int state = Integer.parseInt(messageRcv.getContent().replace("ADT_",""));
+                        ACLMessage messageRcv = receive();
+                        if (messageRcv!=null){
 
-                            if(state==ManagerAgent.containers.size()){
-                                //UNDER ATTACK
+
+
+                            block(10);
+                        }
+                    }
+
+                    if(!waiting_for_answer){
+                        if(!ManagerAgent.containers.get(Integer.parseInt(containerID)-1).getPacketsDetected().isEmpty()){
+
+                            PacketSniffer packetSniffer = ManagerAgent.containers.get(Integer.parseInt(containerID)-1).getPacketsDetected().get(0);
+
+
+
+
+                            if(ManagerAgent.containers.get(Integer.parseInt(containerID)-1).isAnalysorworking()){
+
+                                try {
+                                    Solve(attacks,packetSniffer,DT,SVM,NN);
+
+
+
+
+                                    ManagerAgent.containers.get(Integer.parseInt(containerID)-1).getPacketsDetected().remove(packetSniffer);
+
+                                    Thread.sleep(ManagerAgent.treating_time);
+
+
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+
+
+
                             }
-                            //System.out.println("Anomalie/attack sur "+messageRcv.getContent().replace("ADT_","")+"machines");
 
 
-                        }
-                        block(10);
-                    }
-                }
-                if(!ManagerAgent.containers.get(Integer.parseInt(containerID)-1).getPacketsDetected().isEmpty()){
-
-                    PacketSniffer packetSniffer = ManagerAgent.containers.get(Integer.parseInt(containerID)-1).getPacketsDetected().get(0);
-
-
-
-
-                    if(ManagerAgent.containers.get(Integer.parseInt(containerID)-1).isAnalysorworking()){
-
-                        try {
-                            Solve(attacks,packetSniffer,DT,SVM,NN);
-
-                            packets_counter+=1;
-
-
-                            ManagerAgent.containers.get(Integer.parseInt(containerID)-1).getPacketsDetected().remove(packetSniffer);
-
-
-
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-
-
-                        try {
-                            Thread.sleep(ManagerAgent.treating_time);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
                         }
                     }
 
-
                 }
+
+
+
+
             }
         });
 
